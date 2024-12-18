@@ -95,5 +95,9 @@ tpm <- tpm %>%
 
 tpm_long <- tpm %>% 
   pivot_longer(cols=-c(Gene,geneID,description),names_to = "Sample", values_to = "TpM") %>% 
-  left_join(sampleTable %>% rownames_to_column("Sample"), by = c("Sample")) %>% 
+  left_join(sampleTable, by = c("Sample")) %>% 
   dplyr::select(Gene, geneID, Sample, TpM, group)
+
+
+# save the tpm table
+# write_xlsx(tpm_long, "results/tpm.xlsx")
