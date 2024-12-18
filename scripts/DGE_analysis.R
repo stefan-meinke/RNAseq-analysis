@@ -123,6 +123,7 @@ counts_raw %<>%
 
 # save the raw counts dataframe
 # write_xlsx(counts_raw, "data/processed/counts_raw.xlsx")
+# write_xlsx(gene_ID, "data/gene_ID.xlsx")
 
 
 # ---------------------------------------------------------- #
@@ -225,7 +226,7 @@ DESeq_results_sig_padj <- DESeq_results %>%
 
 
 # save the result files
-# write_xlsx(sampleTable, "data/processed/sampleTable.xlsx")
+# write_xlsx(sampleTable %>% rownames_to_column("Sample"), "data/processed/sampleTable.xlsx")
 # write_xlsx(DESeq_results, "data/processed/DESeq_results.xlsx")
 # write_xlsx(DESeq_results_sig_padj, "data/processed/DESeq_results_sig_padj.xlsx")
 
