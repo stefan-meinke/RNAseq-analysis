@@ -8,37 +8,13 @@ required_libraries <- c("devtools",
                         "BiocManager",
                         "readr", 
                         "writexl",
-                        "ReportingTools",
                         "tidyverse", 
                         "magrittr", 
-                        "ggplot2", 
-                        "ggsignif",
-                        "gridExtra",
-                        "VennDiagram",
-                        "ggvenn",
-                        "ggVennDiagram",
-                        "dplyr", 
-                        "ggtranscript", 
-                        "patchwork", 
                         "readxl",
-                        "ggbeeswarm",
                         "stringr",
-                        "knitr",
-                        "kableExtra",
-                        "scales",
-                        "pheatmap",
-                        "purrr",
-                        "VennDiagram",
-                        "eulerr",
-                        "UpSetR",
-                        "clusterProfiler",
                         "DESeq2",
-                        "edgeR",
-                        "rtracklayer",
                         "biomaRt",
                         "org.Hs.eg.db",
-                        "GenomicFeatures",
-                        "openxlsx",
                         "apeglm")
 
 # Check and install/load packages
@@ -249,6 +225,7 @@ DESeq_results_sig_padj <- DESeq_results %>%
 
 
 # save the result files
+# write_xlsx(sampleTable, "data/processed/sampleTable.xlsx")
 # write_xlsx(DESeq_results, "data/processed/DESeq_results.xlsx")
 # write_xlsx(DESeq_results_sig_padj, "data/processed/DESeq_results_sig_padj.xlsx")
 
