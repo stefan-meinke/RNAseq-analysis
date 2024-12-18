@@ -9,6 +9,7 @@
 # install and load all necessary libraries
 required_libraries <- c("devtools",
                         "BiocManager",
+                        "dplyr",
                         "readxl",
                         "edgeR",
                         "GenomicFeatures")
