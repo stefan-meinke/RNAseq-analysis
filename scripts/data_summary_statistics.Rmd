@@ -7,6 +7,7 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+options(repos = c(CRAN = "https://cloud.r-project.org/"))  # Set CRAN mirror
 ```
 
 
@@ -20,12 +21,11 @@ required_libraries <- c("tidyverse",
                         "magrittr", 
                         "ggplot2", 
                         "readxl",
-                        "kable",
                         "knitr")
 ```
 
 Check and install/load packages
-```{r}
+```{r include=FALSE}
 for (package in required_libraries) {
   # Check if the package is already installed
   if (!requireNamespace(package, quietly = TRUE)) {
@@ -36,6 +36,8 @@ for (package in required_libraries) {
   library(package, character.only = TRUE)
 }
 ```
+
+
 
 
 Load the DGE result file
@@ -54,6 +56,8 @@ DESeq_results_sig %>%
   group_by(group) %>% 
   summarize(n = n())
 ```
+
+
 
 ## number of up- and downregulated genes per group
 ```{r}
@@ -78,6 +82,7 @@ DESeq_results_sig %>%
   )
 ```
 
+
 ### Histogram of fold changes
 ```{r}
 ggplot(DESeq_results_sig, aes(x = log2FoldChange, fill = group)) +
@@ -87,6 +92,7 @@ ggplot(DESeq_results_sig, aes(x = log2FoldChange, fill = group)) +
   labs(x = "Log2FoldChange", y = "Count", title = "Distribution of Log2 Fold Changes") +
   theme(legend.position = "none")
 ```
+
 
 ## p-value distribution
 ```{r}
