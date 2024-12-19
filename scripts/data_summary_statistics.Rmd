@@ -1,0 +1,130 @@
+---
+title: "data_summary_statistics"
+author: "Stefan Meinke"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Script for some (summary) statistics of the DGE results
+
+
+load required libraries
+
+```{r}
+required_libraries <- c("tidyverse", 
+                        "magrittr", 
+                        "ggplot2", 
+                        "readxl",
+                        "kable",
+                        "knitr")
+```
+
+Check and install/load packages
+```{r}
+for (package in required_libraries) {
+  # Check if the package is already installed
+  if (!requireNamespace(package, quietly = TRUE)) {
+      # Install CRAN packages
+      install.packages(package, dependencies = TRUE)
+    }
+  # Load the package
+  library(package, character.only = TRUE)
+}
+```
+
+
+Load the DGE result file
+```{r}
+DESeq_results <- read_xlsx("results/DESeq_results.xlsx")
+
+DESeq_results_sig <- DESeq_results %>% 
+  filter(padj < 0.05 & abs(log2FoldChange) > log2(1.5))
+```
+
+
+
+## calculate the total number of significantly regulated genes
+```{r}
+DESeq_results_sig %>% 
+  group_by(group) %>% 
+  summarize(n = n())
+```
+
+## number of up- and downregulated genes per group
+```{r}
+DESeq_results_sig %>% 
+  mutate(regulation = ifelse(log2FoldChange > 0, "upregulated", "downregulated")) %>% 
+  group_by(group, regulation) %>% 
+  summarize(n = n())
+```
+
+
+
+## summary statistics for fold changes per group
+```{r}
+DESeq_results_sig %>% 
+  group_by(group) %>%
+  summarize(
+    mean_log2fc = mean(log2FoldChange, na.rm = TRUE),
+    median_log2fc = median(log2FoldChange, na.rm = TRUE),
+    sd_log2fc = sd(log2FoldChange, na.rm = TRUE),
+    min_log2fc = min(log2FoldChange, na.rm = TRUE),
+    max_log2fc = max(log2FoldChange, na.rm = TRUE)
+  )
+```
+
+### Histogram of fold changes
+```{r}
+ggplot(DESeq_results_sig, aes(x = log2FoldChange, fill = group)) +
+  geom_histogram(bins = 30, alpha = 0.8, position = "identity") +
+  facet_wrap(~ group, scales = "free_y") +
+  theme_minimal() +
+  labs(x = "Log2FoldChange", y = "Count", title = "Distribution of Log2 Fold Changes") +
+  theme(legend.position = "none")
+```
+
+## p-value distribution
+```{r}
+ggplot(DESeq_results_sig, aes(x = padj, fill = group)) +
+  geom_histogram(bins = 20, alpha = 0.8, position = "identity") +
+  facet_wrap(~ group, scales = "free_y") +
+  theme_minimal() +
+  labs(x = "adjusted p-value", y = "Count", title = "Distribution of adjusted p-values") +
+  theme(legend.position = "none")
+```
+
+
+## Top genes
+```{r}
+top_genes <- DESeq_results_sig %>%
+  drop_na %>% 
+  group_by(group) %>%
+  arrange(desc(log2FoldChange)) %>%
+  slice_head(n = 10) %>%
+  mutate(regulation = "upregulated") %>%
+  bind_rows(
+    DESeq_results_sig %>%
+      group_by(group) %>%
+      arrange(log2FoldChange) %>%
+      slice_head(n = 10) %>%
+      mutate(regulation = "downregulated")
+  )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
