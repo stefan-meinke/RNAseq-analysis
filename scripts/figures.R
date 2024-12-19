@@ -30,7 +30,8 @@ required_libraries <- c("devtools",
                         "rtracklayer",
                         "biomaRt",
                         "org.Hs.eg.db",
-                        "GenomicFeatures")
+                        "GenomicFeatures",
+                        "PoiClaClu") # Poisson distance plot
 
 # Check and install/load packages
 if (!requireNamespace("BiocManager", quietly = TRUE)) {
@@ -85,6 +86,73 @@ tpm_long <- read_xlsx("results/tpm.xlsx")
 
 # set the groups as factor and specify the levels
 tpm_long$group <- factor(tpm_long$group, levels = c("baseline", "3 weeks MM", "3 weeks RMPI"))
+
+# load the read counts table
+counts <- read_xlsx("data/processed/counts_raw.xlsx")
+
+sampleTable <- read_xlsx("data/processed/sampleTable.xlsx")
+
+
+
+
+# -------------- #
+# Distance plots #
+# -------------- #
+
+# generate distance plots (and also PCA plot) using variance-stabilized read counts
+
+counts %<>% 
+  dplyr::select(geneID, matches("SRR")) %>% 
+  column_to_rownames("geneID")
+
+dds <- DESeqDataSetFromMatrix(countData = counts,
+                              colData = sampleTable %>% column_to_rownames("Sample"),
+                              design = ~ group)
+
+# Normalize data
+dds <- DESeq(dds)
+
+# filter only for genes with read counts >=10
+dds <- dds[rowSums(counts(dds)) >= 10, ]
+
+vsd = varianceStabilizingTransformation(object = dds, 
+                                        blind = TRUE,
+                                        fitType = "parametric")
+
+sampleDists <- dist(t(assay(vsd)))
+sampleDistMatrix <- as.matrix(sampleDists)
+colnames(sampleDistMatrix) <- NULL
+
+# Open a PDF device
+pdf("results/figures/sample_distance_heatmap.pdf", width = 4.6, height = 3.3)
+
+pheatmap(sampleDistMatrix,
+         clustering_distance_rows = sampleDists,
+         clustering_distance_cols = sampleDists,
+         color = colorRampPalette(c("#4393C3", "white", "#D6604D"))(20))
+
+# Close the PDF device
+dev.off()
+
+### based on Poisson Distance using raw counts (not normalized)
+poisd <- PoissonDistance((t(counts(dds))))
+
+samplePoisDistMatrix <- as.matrix(poisd$dd)
+rownames(samplePoisDistMatrix) <- dds$Sample
+colnames(samplePoisDistMatrix) <- NULL
+
+
+
+pdf("results/figures/sample_poisson_distance_heatmap.pdf", width = 4.6, height = 3.3)
+
+pheatmap(samplePoisDistMatrix,
+         clustering_distance_rows = poisd$dd,
+         clustering_distance_cols = poisd$dd,
+         color = colorRampPalette(c("#4393C3", "white", "#D6604D"))(20))
+
+dev.off()
+
+
 
 
 
@@ -160,6 +228,9 @@ for (i in unique_groups){
 }
 
 
+# regulated_genes <- split(DESeq_results_sig$Gene, DESeq_results_sig$group)
+
+
 # Dynamically generate the VennDiag list
 VennDiag <- setNames(
   lapply(single_dfs, function(df) unique(df$Gene)), 
@@ -187,3 +258,113 @@ dev.off()
 
 
 
+
+
+# ---------- #
+# Upset Plot #
+# ---------- #
+
+# Pre-allocate the list
+upset_list <- list()
+
+# Loop through the unique combinations and extract Ensembl IDs
+for (i in seq_along(unique_combinations)) {
+  # Extract the current combination name
+  comparison_name <- unique_combinations[i]
+  
+  # Extract the corresponding Ensembl IDs (this assumes the order is correct)
+  DESeq_results_sig_padj_filtered <- DESeq_results_sig_padj %>% filter(group == comparison_name)
+  gene_ids <- unique(DESeq_results_sig_padj_filtered$geneID)
+  
+  # Assign to the list
+  upset_list[[comparison_name]] <- gene_ids
+}
+
+upset_plot <- upset(fromList(upset_list),
+                    order.by = "freq",
+                    sets.x.label = "number of genes",
+                    text.scale = 1.5,
+                    point.size = 2)
+
+print(upset_plot)
+
+# Create a named vector for each set to indicate membership
+all_genes <- unique(unlist(upset_list))
+all_genes <- all_genes[!is.na(all_genes)]
+upset_data <- as.data.frame(
+  sapply(upset_list, function(x) all_genes %in% x)
+)
+row.names(upset_data) <- all_genes
+
+# Extract intersections using a custom function
+extract_intersections <- function(upset_data) {
+  comb_matrix <- as.matrix(upset_data)
+  set_names <- colnames(comb_matrix)
+  intersect_list <- list()
+  
+  # Iterate through each combination
+  for (i in 1:nrow(comb_matrix)) {
+    included_sets <- set_names[comb_matrix[i, ] == TRUE]
+    intersection_name <- paste(included_sets, collapse = " & ")
+    intersect_list[[intersection_name]] <- c(intersect_list[[intersection_name]], rownames(comb_matrix)[i])
+  }
+  
+  return(intersect_list)
+}
+
+# Get intersections
+intersect_genes <- extract_intersections(upset_data)
+
+
+# Create a named vector for mapping geneIDs with gene names
+gene_id_to_name <- setNames(gene_ID$Gene, gene_ID$geneID)
+
+# Function to map gene IDs to gene names
+map_gene_names <- function(gene_ids) {
+  gene_names <- gene_id_to_name[gene_ids]
+  return(gene_names)
+}
+
+# Apply the function to the intersect_genes list
+intersect_genes_with_names <- lapply(intersect_genes, map_gene_names)
+
+
+# PCA plot
+# number of up- and down-regulated genes
+# dumbell plot showing top regulated genes 
+# heatmap
+# heatmap of shared genes
+gene_groups <- DESeq_results_sig %>%
+  select(Gene, group) %>%
+  mutate(present = 1) %>%
+  pivot_wider(names_from = group, values_from = present, values_fill = 0)
+
+pheatmap(as.matrix(gene_groups[,-1]), cluster_cols = TRUE, cluster_rows = TRUE, show_rownames = FALSE,
+         main = "Regulated Genes Shared Across Groups")
+# volcano plot
+# MA plot
+# new script for enrichment analysis
+
+
+
+# -------------------------------------------- #
+# R and library versions used in this analysis #
+# -------------------------------------------- #
+# Get R version
+r_version <- R.version.string
+
+# Get package versions
+package_versions <- sapply(required_libraries, function(pkg) {
+  if (requireNamespace(pkg, quietly = TRUE)) {
+    paste(pkg, packageVersion(pkg), sep = ": ")
+  } else {
+    paste(pkg, "NOT INSTALLED", sep = ": ")
+  }
+})
+
+# Save version information to a file
+writeLines(c(
+  paste("R Version:", r_version),
+  "Package Versions:",
+  paste(package_versions, collapse = "\n")
+), "results/package_versions.txt")
