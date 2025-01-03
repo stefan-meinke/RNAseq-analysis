@@ -393,22 +393,135 @@ DGE_numbers_plot <- ggplot(DGE_numbers, aes(x = group, y = n)) +
 
 
 
+# ----------------------- #
+# heatmap of shared genes #
+# ----------------------- #
+
+groups <- unique(DESeq_results_sig$group)
+
+group1_genes <- DESeq_results_sig %>% 
+  filter(group == groups[1]) %>% 
+  pull(Gene) %>% 
+  unique
+
+group2_genes <- DESeq_results_sig %>% 
+  filter(group == groups[2]) %>% 
+  pull(Gene) %>% 
+  unique
+
+common_genes <- intersect(group1_genes, group2_genes)
+
+common_genes_data <- DESeq_results_sig %>% 
+  filter(Gene %in% common_genes) %>% 
+  drop_na
+
+# top 100 upregulated Genes
+top_upregulated <- common_genes_data %>%
+  arrange(desc(log2FoldChange)) %>%  # Sort in descending order of log2FoldChange
+  slice_head(n = 100)               # Select the top 100 rows
+
+# top 100 downregulated Genes
+top_downregulated <- common_genes_data %>%
+  arrange(log2FoldChange) %>%       # Sort in ascending order of log2FoldChange
+  slice_head(n = 100)               # Select the top 100 rows
+
+# Combine the Two
+top_genes <- bind_rows(top_upregulated, top_downregulated)
 
 
+heatmap_data <- top_genes %>%
+  dplyr::select(Gene, group, log2FoldChange) %>%
+  pivot_wider(names_from = group, values_from = log2FoldChange) %>% 
+  filter(!is.na(`3.weeks.RMPI vs baseline`) & !is.na(`3.weeks.MM vs baseline`)) %>% 
+  column_to_rownames("Gene")
+
+
+col_color <- list(group = setNames(c("grey90", "grey50"), groups))
+
+
+
+heatmap_shared <- pheatmap(heatmap_data, 
+         color = colorRampPalette(c("#4393C3", "white", "#D6604D"))(20),
+         # scale = "row",
+         # annotation_col = col_data,
+         annotation_colors = col_color,
+         cluster_rows = TRUE,
+         cluster_cols = FALSE,
+         treeheight_row=0, 
+         treeheight_col=0,
+         show_rownames = TRUE,
+         show_colnames = TRUE,
+         cutree_rows = 2,
+         angle_col = 90,
+         legend_breaks = c(-2, 0, 2, 4, max(heatmap_data)),
+         legend_labels = c("-2", "0", "2", "4", "log2FC\n"),
+         main = "log2FC of shared genes")
+
+
+# Open a PDF device
+pdf("results/figures/heatmap_sharedGenes.pdf", height = 10, width = 4.3)
+
+# Print the plot to the PDF
+print(heatmap_shared)
+
+# Close the PDF device
+dev.off()
+
+
+
+
+
+# heatmap using variance-stabilized counts
+heatmap_matrix <- assay(vsd) %>% 
+  as.data.frame %>% 
+  rownames_to_column("geneID") %>% 
+  inner_join(DESeq_results_sig, by = "geneID") %>% 
+  dplyr::select(Gene, matches("SRR")) %>% 
+  distinct() %>% # remove duplicates
+  drop_na %>% 
+  column_to_rownames("Gene")
+
+column_annotation <- sampleTable %>%
+  filter(Sample %in% colnames(heatmap_matrix)) %>%  # Ensure only samples in heatmap_matrix are included
+  arrange(match(Sample, colnames(heatmap_matrix)))
+
+column_labels <- setNames(column_annotation$group, column_annotation$Sample)
+
+col_data <- data.frame(group = column_labels)
+
+heatmap <- pheatmap(heatmap_matrix, 
+         color = colorRampPalette(c("#4393C3", "white", "#D6604D"))(20),
+         scale = "row",
+         annotation_col = col_data,
+         # annotation_colors = col_color,
+         cluster_rows = TRUE,
+         cluster_cols = FALSE,
+         treeheight_row=0, 
+         treeheight_col=0,
+         show_rownames = FALSE,
+         show_colnames = TRUE,
+         col_angle = 270)
+
+
+# Open a PDF device
+pdf("results/figures/heatmap.pdf", height = 6, width = 4.2)
+
+# Print the plot to the PDF
+print(heatmap)
+
+# Close the PDF device
+dev.off()
+
+
+
+# ------------ #
+# volcano plot #
+# ------------ #
 
 
 
 # dumbell plot showing top regulated genes 
-# heatmap
-# heatmap of shared genes
-gene_groups <- DESeq_results_sig %>%
-  select(Gene, group) %>%
-  mutate(present = 1) %>%
-  pivot_wider(names_from = group, values_from = present, values_fill = 0)
 
-pheatmap(as.matrix(gene_groups[,-1]), cluster_cols = TRUE, cluster_rows = TRUE, show_rownames = FALSE,
-         main = "Regulated Genes Shared Across Groups")
-# volcano plot
 # MA plot
 # new script for enrichment analysis
 
