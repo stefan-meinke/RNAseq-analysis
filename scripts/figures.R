@@ -549,22 +549,14 @@ for(group in groups){
 
 
 # save the plots
-for(i in seq_along(MA_plots)){
-  plot_name <- names(MA_plots)[i]
-  plot <- MA_plots[[i]]
-  file_name <- paste0("results/figures/",plot_name,".pdf")
-  
-  ggsave(file_name, plot, height = 3, width = 5.8)
-}
+# for(i in seq_along(MA_plots)){
+#   plot_name <- names(MA_plots)[i]
+#   plot <- MA_plots[[i]]
+#   file_name <- paste0("results/figures/MAplot_",plot_name,".pdf")
+#   
+#   ggsave(file_name, plot, height = 3, width = 5.8)
+# }
 
-
-
-
-
-# dumbell plot showing top regulated genes 
-
-# MA plot
-# new script for enrichment analysis
 
 
 
