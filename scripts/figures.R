@@ -355,16 +355,49 @@ PCAplot <- ggplot(pcaData, aes(PC1, PC2)) +
 
 
 # save the PCA plot
-file_name <- paste0("results/figures/",plot_name,".pdf")
-
 # ggsave("results/figures/PCA.pdf", PCAplot, height = 2.8, width = 4.7)
 
 
 
 
+# -------------------------------------- #
+# number of up- and down-regulated genes #
+# -------------------------------------- #
 
-# PCA plot
-# number of up- and down-regulated genes
+DGE_numbers <- DESeq_results_sig %>% 
+  mutate(direction = case_when(
+    log2FoldChange > 0 ~ "upregulated",
+    log2FoldChange < 0 ~ "downregulated",
+    log2FoldChange == 0 ~ "unchanged")) %>% 
+  group_by(group, direction) %>% 
+  dplyr::summarize(n = n())
+
+DGE_numbers$direction <- factor(DGE_numbers$direction, level = c("downregulated", "upregulated"))
+
+
+DGE_numbers_plot <- ggplot(DGE_numbers, aes(x = group, y = n)) +
+  geom_bar(stat = "identity", aes(fill = direction), color = "black") +
+  coord_flip() +
+  scale_fill_manual(values = c("#4393C3","#D6604D")) +
+  labs(x = "",
+       fill = "") +
+  ggtitle("Number of regulated genes") +
+  my_theme +
+  theme(panel.border = element_blank(),
+        axis.line = element_line(color = "black"),
+        legend.position = "bottom")
+
+
+# ggsave("results/figures/DGE_numbers.pdf", DGE_numbers_plot, height = 2.2, width = 4.7)
+
+
+
+
+
+
+
+
+
 # dumbell plot showing top regulated genes 
 # heatmap
 # heatmap of shared genes
