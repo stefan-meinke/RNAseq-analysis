@@ -13,6 +13,7 @@ required_libraries <- c("devtools",
                         "VennDiagram",
                         "ggvenn",
                         "ggVennDiagram",
+                        "ggpubr" # for ggmaplot
                         "dplyr", 
                         "patchwork", 
                         "readxl",
@@ -517,6 +518,46 @@ dev.off()
 # ------------ #
 # volcano plot #
 # ------------ #
+
+
+
+
+
+# -------- #
+# MA plots #
+# -------- #
+
+MA_plots <- list()
+
+for(group in groups){
+  
+  df <- DESeq_results_sig %>% 
+    filter(group == group)
+  
+  MA_plot <- ggmaplot(df,
+                      size = 2,
+                      main = group,
+                      genenames = as.vector(df$Gene),
+                      alpha = 0.6,
+                      font.label = c("10"),
+                      top = 20
+  )
+  
+  MA_plots[[group]] <- MA_plot
+}
+
+
+
+# save the plots
+for(i in seq_along(MA_plots)){
+  plot_name <- names(MA_plots)[i]
+  plot <- MA_plots[[i]]
+  file_name <- paste0("results/figures/",plot_name,".pdf")
+  
+  ggsave(file_name, plot, height = 3, width = 5.8)
+}
+
+
 
 
 
