@@ -124,7 +124,7 @@ sampleDistMatrix <- as.matrix(sampleDists)
 colnames(sampleDistMatrix) <- NULL
 
 # Open a PDF device
-pdf("results/figures/sample_distance_heatmap.pdf", width = 4.6, height = 3.3)
+# pdf("results/figures/sample_distance_heatmap.pdf", width = 4.6, height = 3.3)
 
 pheatmap(sampleDistMatrix,
          clustering_distance_rows = sampleDists,
@@ -132,7 +132,7 @@ pheatmap(sampleDistMatrix,
          color = colorRampPalette(c("#4393C3", "white", "#D6604D"))(20))
 
 # Close the PDF device
-dev.off()
+# dev.off()
 
 ### based on Poisson Distance using raw counts (not normalized)
 poisd <- PoissonDistance((t(counts(dds))))
@@ -143,14 +143,14 @@ colnames(samplePoisDistMatrix) <- NULL
 
 
 
-pdf("results/figures/sample_poisson_distance_heatmap.pdf", width = 4.6, height = 3.3)
+# pdf("results/figures/sample_poisson_distance_heatmap.pdf", width = 4.6, height = 3.3)
 
 pheatmap(samplePoisDistMatrix,
          clustering_distance_rows = poisd$dd,
          clustering_distance_cols = poisd$dd,
          color = colorRampPalette(c("#4393C3", "white", "#D6604D"))(20))
 
-dev.off()
+# dev.off()
 
 
 
@@ -327,6 +327,40 @@ map_gene_names <- function(gene_ids) {
 
 # Apply the function to the intersect_genes list
 intersect_genes_with_names <- lapply(intersect_genes, map_gene_names)
+
+
+
+
+# -------- #
+# PCA plot #
+# -------- #
+
+# perform PCA analysis using variance-stablized counts
+pcaData <- plotPCA(vsd, intgroup = c("group"), returnData = TRUE)
+percentVar <- round(100*attr(pcaData, "percentVar"))
+
+pcaData %<>%
+  mutate(group = factor(group, levels = c("baseline", "3 weeks MM", "3 weeks RMPI")))
+
+PCAplot <- ggplot(pcaData, aes(PC1, PC2)) +
+  geom_point(size = 4, shape = 21, aes(fill = group)) +
+  xlab(paste0("PC1: ",percentVar[1],"% variance")) +
+  ylab(paste0("PC2: ",percentVar[2],"% variance")) +
+  #geom_label_repel(aes(label = Sample), size = 3, box.padding = 0.5) +
+  # stat_ellipse() +
+  # coord_fixed(ratio = 1) +
+  my_theme +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor =element_blank())
+
+
+# save the PCA plot
+file_name <- paste0("results/figures/",plot_name,".pdf")
+
+# ggsave("results/figures/PCA.pdf", PCAplot, height = 2.8, width = 4.7)
+
+
+
 
 
 # PCA plot
