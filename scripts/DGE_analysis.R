@@ -103,7 +103,7 @@ ensembl_dataset <- "hsapiens_gene_ensembl"
 ensembl_attributes <- c("ensembl_gene_id", "external_gene_name", "description") 
 
 # Create a biomart object to access the Ensembl database
-ensembl <- useMart("ensembl", dataset = ensembl_dataset)#, optionally use: host = "https://useast.ensembl.org/")
+ensembl <- useMart("ensembl", dataset = ensembl_dataset, host = "https://useast.ensembl.org/")#, optionally use: host = "https://useast.ensembl.org/")
 
 # Define the gene IDs you want to convert
 ensembl_gene_ids <- counts_raw$geneID
@@ -114,6 +114,8 @@ gene_ID <- getBM(attributes = ensembl_attributes, filters = "ensembl_gene_id", v
   mutate(description = str_extract(description, ".*(?=\\[)")) %>%
   dplyr::rename(Gene = external_gene_name)
 
+# alternatively load the gene_ID table
+gene_ID <- read_xlsx(paste0(project_dir, "/data/gene_ID.xlsx"))
 
 # add "Gene" column to the counts_raw dataframe by joining the counts_raw dataframe with the gene_ID df
 counts_raw %<>%
@@ -143,7 +145,8 @@ SraRunTable <- read_csv("data/SraRunTable.csv")
 
 # create the sampleTable dataframe
 sampleTable <- SraRunTable %>% 
-  dplyr::select(Sample = Run, group = treatment) %>% 
+  dplyr::select(Sample = Run, temperature, treatment) %>% 
+  mutate(group = paste0(temperature, "_", treatment)) %>% 
   column_to_rownames("Sample")
 
 groups <- unique(sampleTable$group)
@@ -222,7 +225,7 @@ DESeq_results %<>%
 
 # Filter DESeq results for significance
 DESeq_results_sig_padj <- DESeq_results %>% 
-  filter(padj < 0.05 & abs(log2FoldChange) > log2(1.5))
+  filter(padj < 0.01 & abs(log2FoldChange) > log2(1.5))
 
 
 # save the result files
