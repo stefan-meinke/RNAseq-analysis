@@ -8,11 +8,11 @@ The R version and package versions used für this analysis are summarized in the
 
 ## Workflow overview
 1. Pre-processing: raw RNA-seq reads were processed using [fastp](https://github.com/OpenGene/fastp) for adapter trimming and quality filtering
-2. Alignment: reads were aligned to the reference genome GRCh38.111 (Ensembl) using [STAR](https://github.com/alexdobin/STAR) with default settings.
-3. DGE analysis:
+2. Alignment: reads were aligned to the reference genome GRCh38.111 (Ensembl) using [STAR](https://github.com/alexdobin/STAR) using the options --quantMode GeneCounts --seedPerWindowNmax 15 --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --twopassMode Basic
+4. DGE analysis:
    - STAR-derived count files (*ReadsPerGene.out.tab.gz) were used as input.
    - Differential gene expression analysis was performed using the [DESeq2](https://bioconductor.org/packages/devel/bioc/vignettes/DESeq2/inst/doc/DESeq2.html) package
-4. Alternative splicing analysis:
+5. Alternative splicing analysis:
    - rMATS-turbo ([Wang et al. (2024) Nat Protoc](https://www.nature.com/articles/s41596-023-00944-2#citeas), [rmats-turbo](https://github.com/Xinglab/rmats-turbo)) derived *MATS.JC.txt result files were used as input
    
 ... To be continued ...
