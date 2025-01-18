@@ -94,14 +94,15 @@ load_rmats_data <- function(dir, filter_data = TRUE){
     # combine all dataframes for this subdirectory
     AS_combined <- bind_rows(dfs)
     
-    # Perform final processing
-    AS_combined <- AS_combined %>%
-      select(-matches("^ID\\.\\.\\.")) %>% # Remove any columns matching ID... pattern
-      rename(
-        ID = ID...1, 
-        geneID = GeneID, 
-        Gene = geneSymbol
-      )
+    return(AS_combined)
+    # # Perform final processing
+    # AS_combined <- AS_combined %>%
+    #   select(-matches("^ID\\.\\.\\.")) %>% # Remove any columns matching ID... pattern
+    #   rename(
+    #     ID = ID...1, 
+    #     geneID = GeneID, 
+    #     Gene = geneSymbol
+    #   )
     
     # Save results in the lists
     subdir_name <- basename(subdir)
