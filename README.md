@@ -3,7 +3,7 @@ Workflow for the analysis of RNA seq data (differential gene expression, alterna
 
 # General information
 This repository provides an example of a data analysis pipeline for **differential gene expression (DGE)** and **alternative splicing (AS)** analysis using short-read bulk RNAseq data.
-The dataset used in this example is derived from the SRA study [SRP264954](https://www.ncbi.nlm.nih.gov/sra/?term=SRP264954). 
+The dataset used in this example is derived from the SRA study [SRP242571](https://www.ncbi.nlm.nih.gov/sra/?term=SRP242571). 
 The R version and package versions used für this analysis are summarized in the [package_versions.txt](https://github.com/stefan-meinke/RNAseq-analysis/blob/main/results/package_versions.txt) file.
 
 ## Workflow overview
